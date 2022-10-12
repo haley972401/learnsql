@@ -58,3 +58,36 @@ WHERE
             *
         FROM (SELECT MIN(Id) FROM Person GROUP BY Email) as p
     );
+
+
+--SOLUTION BONUS: https://learn.microsoft.com/en-us/troubleshoot/sql/database-design/remove-duplicate-rows-sql-server-tab
+--1
+DELETE T
+FROM
+(
+SELECT *
+, DupRank = ROW_NUMBER() OVER (
+              PARTITION BY key_value
+              ORDER BY (SELECT NULL)
+            )
+FROM original_table
+) AS T
+WHERE DupRank > 1
+
+--2
+SELECT DISTINCT *
+INTO duplicate_table
+FROM original_table
+GROUP BY key_value
+HAVING COUNT(key_value) > 1
+
+DELETE original_table
+WHERE key_value
+IN (SELECT key_value
+FROM duplicate_table)
+
+INSERT original_table
+SELECT *
+FROM duplicate_table
+
+DROP TABLE duplicate_table
